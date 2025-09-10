@@ -15,7 +15,7 @@ public class KeycloakService {
 
     private final WebClient.Builder webClientBuilder;
 
-    private final String keycloakUrl = "http://localhost:8081/realms/mi-realm/protocol/openid-connect/token";
+    private final String keycloakUrl = "http://localhost:8080/realms/mi-realm/protocol/openid-connect/token";
     private final String clientId = "mi-cliente";
     private final String clientSecret = "mi-secreto"; // opcional si el cliente está configurado confidencial
 

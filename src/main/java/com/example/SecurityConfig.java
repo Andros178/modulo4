@@ -5,9 +5,10 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // nuevo
-import org.springframework.security.crypto.password.PasswordEncoder; // nuevo
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -17,24 +18,35 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/modulo4", "/modulo4/public/**", "/auth/register", "/auth/login").permitAll()
+                .requestMatchers("/", "/public/**").permitAll()
                 .requestMatchers("/m4/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
-            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-
-        // Solo aplicar JWT a las rutas que lo requieran (no a las públicas)
-        http.oauth2ResourceServer(oauth2 -> oauth2.jwt());
-        http.oauth2Login();
+            .formLogin(form -> form.permitAll())
+            .logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+            );
 
         return http.build();
     }
 
+    // Usuario en memoria para pruebas
     @Bean
-    public PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
+    public UserDetailsService userDetailsService() {
+        UserDetails user = User
+            .withUsername("admin")
+            .password("{noop}1234")
+            .roles("USER", "ADMIN")
+            .build();
 
+        return new InMemoryUserDetailsManager(user);
+    }
+
+    // 👉 Este bean expone AuthenticationManager y resuelve tu error
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
